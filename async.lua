@@ -1,10 +1,14 @@
 local awaitable = {
 	__index = {
 		get = function(self, cb)
+			assert(type(cb) == "function", "Awaitable:get(fn) - 'fn' must be a function")
+
 			if self.val then cb(unpack(self.val))
 			else self.callbacks[#self.callbacks + 1] = cb end
 		end,
 		resolve = function(self, ...)
+			assert(not self.val, "Awaitable objects can only be resolved once")
+
 			self.val = {...}
 			for i = 1, #self.callbacks do
 				self.callbacks[i](...)
@@ -14,6 +18,8 @@ local awaitable = {
 }
 
 function Awaitable(fn)
+	assert(not fn or type(fn) == "function", "Awaitable(fn) - 'fn' must be a function or nil")
+
 	local new = setmetatable({callbacks = {}}, awaitable)
 	if fn then fn(function(...) new:resolve(...) end) end
 	return new
